@@ -25,10 +25,14 @@ class ReSampler:
         # cache computations that will be reused in the re-sampling functions
         # YOUR CODE HERE?
 
+
+
         if state_lock is None:
             self.state_lock = Lock()
         else:
             self.state_lock = state_lock
+
+        self.resample_naiive()
 
     '''
       Performs independently, identically distributed in-place sampling of particles
@@ -39,7 +43,13 @@ class ReSampler:
 
         # YOUR CODE HERE
         # draw random numbers between 0 and 1.0 - draw between 0-101 (not inclusive so 0 - 100) and divide by 100
-        rand_samples = np.random.choice(101, len(self.particles)) / 100.0 # draw a sample for each particle
+        # rand_samples = np.random.choice(1001, len(self.particles)) / 1000.0 # draw a sample for each particle
+        print "Particles inside resample_naiive", self.particles.shape, self.particles
+        particle_indices = np.arange(len(self.particles), dtype=np.float) # [0, 1, ..., 98, 99]
+        selected_indices = np.random.choice(particle_indices, len(self.particles), p=self.weights)
+        self.particles[:,0] = selected_indices[:]
+        self.particles[:,1] = selected_indices[:]
+        self.particles[:,2] = selected_indices[:]
 
         self.state_lock.release()
 
@@ -74,12 +84,12 @@ def main():
     for i in xrange(trials):
         # shape (100, 3), 100 poses of [x, y, theta]
         particles = np.repeat(np.arange(n_particles)[:, np.newaxis], 3, axis=1)  # Create a set of particles
-
+        # print "particles", particles
         # Here their value encodes their index
         # Have increasing weights up until index k_val
         weights = np.arange(n_particles, dtype=np.float) # shape (100,)
 
-        print "weights", weights.shape
+        # print "weights", weights.shape
         # assign weights[80:100] to 0
         weights[k_val:] = 0.0
         # normalize weights - divide each element by sum of all elements
