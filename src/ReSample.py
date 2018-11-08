@@ -32,7 +32,7 @@ class ReSampler:
         else:
             self.state_lock = state_lock
 
-        self.resample_naiive()
+        # self.resample_naiive()
 
     '''
       Performs independently, identically distributed in-place sampling of particles
@@ -47,9 +47,14 @@ class ReSampler:
         print "Particles inside resample_naiive", self.particles.shape, self.particles
         particle_indices = np.arange(len(self.particles), dtype=np.float) # [0, 1, ..., 98, 99]
         selected_indices = np.random.choice(particle_indices, len(self.particles), p=self.weights)
-        self.particles[:,0] = selected_indices[:]
-        self.particles[:,1] = selected_indices[:]
-        self.particles[:,2] = selected_indices[:]
+        self.particles[:, 0] = selected_indices[:]
+        self.particles[:, 1] = selected_indices[:]
+        self.particles[:, 2] = selected_indices[:]
+
+        # set weights to uniform distribution
+        # weights: <type 'numpy.ndarray'> shape (100,)
+        self.weights[:] = np.sum(self.weights) / self.weights.shape[0]
+
 
         self.state_lock.release()
 
@@ -59,7 +64,29 @@ class ReSampler:
     '''
 
     def resample_low_variance(self):
+
+        np.set_printoptions(suppress=True)
+
+        
         self.state_lock.acquire()
+        particle_indices = np.arange(len(self.particles), dtype=np.float)  # [0, 1, ..., 98, 99]
+        one_over_m = 1.0 / len(self.particles)
+        random_num = np.random.uniform(0, one_over_m)
+        random_values = np.append(random_num, random_num + particle_indices[1::1] * one_over_m  )
+        print "random_values", random_values
+        print "one_over_m", one_over_m
+
+        bin_boundaries = np.append([0], np.cumsum(self.weights))
+        print "bin_boundaries", bin_boundaries
+        bins_selected = np.digitize(random_values, bin_boundaries, right=False) - 1
+        print "bins_selected", len(bins_selected), bins_selected
+        self.particles[:, 0] = bins_selected
+        self.particles[:, 1] = bins_selected
+        self.particles[:, 2] = bins_selected
+
+        # set weights to uniform distribution
+        # weights: <type 'numpy.ndarray'> shape (100,)
+        self.weights[:] = np.sum(self.weights) / self.weights.shape[0]
 
         # YOUR CODE HERE
 
