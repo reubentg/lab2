@@ -17,6 +17,8 @@ from ReSample import ReSampler
 from SensorModel import SensorModel
 from MotionModel import KinematicMotionModel
 
+from get_nrand_samples import get_nrand_samples # helper function for gaussian sampling
+
 MAP_TOPIC = "static_map"
 PUBLISH_PREFIX = '/pf/viz'
 PUBLISH_TF = True
@@ -70,9 +72,10 @@ class ParticleFilter():
         rospy.wait_for_service(MAP_TOPIC)
         print("Map obtained")
         map_msg = rospy.ServiceProxy(MAP_TOPIC, GetMap)().map  # The map, will get passed to init of sensor model
-        self.map_info = map_msg.info  # Save info about map for later use
+        self.map_info = map_msg.info  # Save info about map for later use, map dim: width: 800, height: 800
 
-        # Create numpy array representing map for later use
+
+        # Create numpy array representing map for later use, map dim: width: 800, height: 800
         array_255 = np.array(map_msg.data).reshape((map_msg.info.height, map_msg.info.width))
         self.permissible_region = np.zeros_like(array_255, dtype=bool)
         # Numpy array of dimension (map_msg.info.height, map_msg.info.width),
@@ -81,7 +84,7 @@ class ParticleFilter():
 
         print "Globally initializing the particles"
         # Globally initialize the particles
-        self.initialize_global() # ToDo: Add Code Inside This Function
+        self.initialize_global()
 
         # Publish particle filter state
         self.pub_tf = tf.TransformBroadcaster()  # Used to create a tf between the map and the laser for visualization
@@ -129,8 +132,24 @@ class ParticleFilter():
         # Update weights in place so that all particles have the same weight and the
         # sum of the weights is one.
         # YOUR CODE HERE
-        print "ToDo: Add Code to initialize_global"
 
+        perm_pos = np.argwhere(self.permissible_region == 1)
+        perm_x = perm_pos[0]
+        perm_y = perm_pos[1]
+        # 1000 [N_PARTICLES] random angles between 0 and 2pi radians
+        perm_rand_theta = np.random.uniform(0, 2.0 * np.pi, self.N_PARTICLES)
+
+        # choose self.N_particles indices from 0,1,2,...,len(perm_x)) which is ~(296640,) but depends on map
+        # choose 1000 indices from np.arange(0, 296440) using uniform distribution
+        uniform_rand_indices = np.random.choice(len(perm_x), self.N_PARTICLES) # no 3rd param means uniform
+
+        map_samples = np.zeros_like(self.particles) # shape (1000, 3)
+        map_samples[:, 0] = perm_x[uniform_rand_indices]
+        map_samples[:, 1] = perm_y[uniform_rand_indices]
+        map_samples[:, 2] = perm_rand_theta
+        Utils.map_to_world(map_samples, self.map_info)
+        self.particles = map_samples
+        self.weights[:] = 1.0 / self.N_PARTICLES
         self.state_lock.release()
 
     '''
@@ -144,10 +163,9 @@ class ParticleFilter():
     def publish_tf(self, pose, stamp=None):
         if stamp is None:
             stamp = rospy.Time.now()
-        try:
+        try: # this part is only for the real robot because simulation doesn't have odometer
             # Lookup the offset between laser and odom
             delta_off, delta_rot = self.tfl.lookupTransform("/laser", "/odom", rospy.Time(0))
-
             # Transform offset to be w.r.t the map
             off_x = delta_off[0] * np.cos(pose[2]) - delta_off[1] * np.sin(pose[2])
             off_y = delta_off[0] * np.sin(pose[2]) + delta_off[1] * np.cos(pose[2])
@@ -158,10 +176,12 @@ class ParticleFilter():
                                                                                tf.transformations.euler_from_quaternion(
                                                                                    delta_rot)[2]), stamp, "/odom",
                                       "/map")
-
+        # Exception is for simulation only because there is no odometer for simulation
         except (tf.LookupException):  # Will occur if odom frame does not exist
             self.pub_tf.sendTransform((pose[0], pose[1], 0), tf.transformations.quaternion_from_euler(0, 0, pose[2]),
                                       stamp, "/laser", "/map")
+
+
 
     '''
       Returns a 3 element numpy array representing the expected pose given the 
@@ -172,8 +192,16 @@ class ParticleFilter():
 
     def expected_pose(self):
         # YOUR CODE HERE
-        print "ToDo: Add Code to expected_pose"
-        pass
+
+        mean_x = np.mean(self.particles[0])
+        mean_y = np.mean(self.particles[1])
+
+        mean_sin_theta = np.mean(np.sin(self.particles[2]))
+        mean_cos_theta = np.mean(np.cos(self.particles[2]))
+        mean_theta = np.arctan(mean_sin_theta / mean_cos_theta)
+
+        return np.array([mean_x, mean_y, mean_theta])
+
 
     '''
       Callback for '/initialpose' topic. RVIZ publishes a message to this topic when you specify an initial pose 
@@ -187,9 +215,19 @@ class ParticleFilter():
         # Updates the particles in place
         # Updates the weights to all be equal, and sum to one
         # YOUR CODE HERE
-        print "ToDo: Add Code to clicked_pose_cb"
+
+        msg_pose = msg.pose.pose
+
+        std = 0.2 # standard deviation for gaussian samples
+        # get 1000 gaussian samples of [x, y, theta]
+        self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)
+        self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)
+        self.particles[:, 2] = get_nrand_samples(np.ones(self.N_PARTICLES) *
+                                                 Utils.quaternion_to_angle(msg_pose.orientation), std)
+        self.weights[:] = 1.0 / self.N_PARTICLES # set weights to be all equal and sum to one
 
         self.state_lock.release()
+
 
     '''
       Visualize the current state of the filter
@@ -206,6 +244,7 @@ class ParticleFilter():
         self.inferred_pose = self.expected_pose()
 
         if isinstance(self.inferred_pose, np.ndarray):
+            print "PUBLISH_TF"
             if PUBLISH_TF:
                 self.publish_tf(self.inferred_pose)
             ps = PoseStamped()
@@ -222,6 +261,7 @@ class ParticleFilter():
                 self.pub_odom.publish(odom)
 
         if self.particle_pub.get_num_connections() > 0:
+            print "self.particle_pub.get_num_connections()", self.particle_pub.get_num_connections()
             if self.particles.shape[0] > self.N_VIZ_PARTICLES:
                 # randomly downsample particles
                 proposal_indices = np.random.choice(self.particle_indices, self.N_VIZ_PARTICLES, p=self.weights)
@@ -266,7 +306,7 @@ def main():
     laser_ray_step = int(rospy.get_param("~laser_ray_step"))
     # Whether to exclude rays that are beyond the max range (default="true")
     exclude_max_range_rays = bool(rospy.get_param("~exclude_max_range_rays"))
-    # The max range of the laser (default="11.0")
+    # The max range of the laser (default="11.0"), units of meters
     max_range_meters = float(rospy.get_param("~max_range_meters"))
     # Whether to use naiive or low variance sampling (default="low_variance") options: naiive, low_variance
     resample_type = rospy.get_param("~resample_type", "naiive")
