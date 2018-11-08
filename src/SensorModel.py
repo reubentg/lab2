@@ -207,11 +207,6 @@ class SensorModel:
 
         print "self.sensor_model_table 1", sensor_model_table
 
-        # # ToDo: DELETE THIS - Not our code, Only for Testing
-        # # Code from: https://github.com/mit-racecar/particle_filter/blob/master/src/particle_filter.py
-        # from visualize_sensor_model import show_viz
-        # show_viz(sensor_model_table, table_width)
-
         return sensor_model_table
 
 
