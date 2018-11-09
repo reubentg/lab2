@@ -81,6 +81,7 @@ class SensorModel:
     '''
 
     def lidar_cb(self, msg):
+        # print "LIDAR CB START"
         self.state_lock.acquire()
 
         # Compute the observation obs
@@ -112,7 +113,7 @@ class SensorModel:
             self.downsampled_angles = np.array(self.laser_angles[::self.LASER_RAY_STEP],
                                                dtype=np.float32)  # shape (38,)
         obs = (downsampled_ranges, self.downsampled_angles)
-        print "obs", obs[0].shape[0], obs[1].shape[0]
+        # print "obs", obs[0].shape[0], obs[1].shape[0]
 
         ###
         #  Plot for Testing
@@ -131,13 +132,14 @@ class SensorModel:
 
         # print "self.weights 1", self.weights
         self.apply_sensor_model(self.particles, obs, self.weights)
-        print "self.weights 2", np.min(self.weights), np.max(self.weights)
+        # print "self.weights 2", np.min(self.weights), np.max(self.weights)
         self.weights /= np.sum(self.weights)
-        print "self.weights 3", np.min(self.weights), np.max(self.weights)
+        # print "self.weights 3", np.min(self.weights), np.max(self.weights)
 
         self.last_laser = msg
         self.do_resample = True
         self.state_lock.release()
+        # print "LIDAR CB COMPLETE - measures lasers and applies sensor model"
 
     '''
       Compute table enumerating the probability of observing a measurement 
@@ -205,7 +207,7 @@ class SensorModel:
         # normalize - divide all values by the sum of their respective columns
         sensor_model_table /= np.sum(sensor_model_table, axis=0)
 
-        print "self.sensor_model_table 1", sensor_model_table
+        # print "self.sensor_model_table 1", sensor_model_table
 
         return sensor_model_table
 
@@ -219,7 +221,7 @@ class SensorModel:
 
 
     def apply_sensor_model(self, proposal_dist, obs, weights):
-        print "applying sensor model"
+        # print "applying sensor model"
         obs_ranges = obs[0]
         obs_angles = obs[1]
         num_rays = obs_angles.shape[0]
@@ -240,7 +242,7 @@ class SensorModel:
         # # Squash weights to prevent too much peakiness
         np.power(weights, INV_SQUASH_FACTOR, weights)
 
-        print "done applying sensor model"
+        # print "done applying sensor model"
 
 '''
   Code for testing SensorModel

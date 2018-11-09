@@ -39,12 +39,13 @@ class ReSampler:
     '''
 
     def resample_naiive(self):
+        # print "RESAMPLE NAIIVE START"
         self.state_lock.acquire()
 
         # YOUR CODE HERE
         # draw random numbers between 0 and 1.0 - draw between 0-101 (not inclusive so 0 - 100) and divide by 100
         # rand_samples = np.random.choice(1001, len(self.particles)) / 1000.0 # draw a sample for each particle
-        print "Particles inside resample_naiive", self.particles.shape, self.particles
+        # print "Particles inside resample_naiive", self.particles.shape, self.particles
         particle_indices = np.arange(len(self.particles), dtype=np.float) # [0, 1, ..., 98, 99]
         selected_indices = np.random.choice(particle_indices, len(self.particles), p=self.weights)
         self.particles[:, 0] = selected_indices[:]
@@ -57,6 +58,7 @@ class ReSampler:
 
 
         self.state_lock.release()
+        # print "RESAMPLE COMPLETE"
 
     '''
       Performs in-place, lower variance sampling of particles

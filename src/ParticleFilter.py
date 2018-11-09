@@ -114,7 +114,7 @@ class ParticleFilter():
         # Subscribe to the '/initialpose' topic. Publised by RVIZ. See clicked_pose_cb function in this file for more info
         self.pose_sub = rospy.Subscriber("/initialpose", PoseWithCovarianceStamped, self.clicked_pose_cb, queue_size=1)
 
-        print('Initialization complete')
+        print('Initialization complete - end of constructor')
 
     '''
       Initialize the particles as uniform samples across the in-bounds regions of
@@ -122,6 +122,7 @@ class ParticleFilter():
     '''
 
     def initialize_global(self):
+        print "INITIAL GLOBAL START"
         self.state_lock.acquire()
 
         # Use self.permissible_region to get in-bounds states
@@ -151,6 +152,8 @@ class ParticleFilter():
         self.particles = map_samples
         self.weights[:] = 1.0 / self.N_PARTICLES
         self.state_lock.release()
+
+        print "INITIALIZE GLOBAL COMPLETE"
 
     '''
       Publish a tf between the laser and the map
@@ -210,7 +213,11 @@ class ParticleFilter():
     '''
 
     def clicked_pose_cb(self, msg):
+        print ""
+        print "CLICKED POSE START"
         self.state_lock.acquire()
+        print ""
+        print "msg", msg
         # Sample particles from a gaussian centered around the received pose
         # Updates the particles in place
         # Updates the weights to all be equal, and sum to one
@@ -218,15 +225,19 @@ class ParticleFilter():
 
         msg_pose = msg.pose.pose
 
-        std = 0.2 # standard deviation for gaussian samples
+        std = 0.01 # standard deviation for gaussian samples
         # get 1000 gaussian samples of [x, y, theta]
-        self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)
-        self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)
+        self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)[:]
+        self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.y, std)[:]
         self.particles[:, 2] = get_nrand_samples(np.ones(self.N_PARTICLES) *
-                                                 Utils.quaternion_to_angle(msg_pose.orientation), std)
+                                                       Utils.quaternion_to_angle(msg_pose.orientation), std)[:]
+
+        print "particles", self.particles
         self.weights[:] = 1.0 / self.N_PARTICLES # set weights to be all equal and sum to one
 
         self.state_lock.release()
+        time.sleep(3)
+        print "CLICKED POSE COMPLETE"
 
 
     '''
@@ -240,11 +251,11 @@ class ParticleFilter():
 
     def visualize(self):
         # print 'Visualizing...'
+        # print "VISUALIZE START"
         self.state_lock.acquire()
         self.inferred_pose = self.expected_pose()
 
         if isinstance(self.inferred_pose, np.ndarray):
-            print "PUBLISH_TF"
             if PUBLISH_TF:
                 self.publish_tf(self.inferred_pose)
             ps = PoseStamped()
@@ -261,7 +272,7 @@ class ParticleFilter():
                 self.pub_odom.publish(odom)
 
         if self.particle_pub.get_num_connections() > 0:
-            print "self.particle_pub.get_num_connections()", self.particle_pub.get_num_connections()
+            # print "self.particle_pub.get_num_connections()", self.particle_pub.get_num_connections()
             if self.particles.shape[0] > self.N_VIZ_PARTICLES:
                 # randomly downsample particles
                 proposal_indices = np.random.choice(self.particle_indices, self.N_VIZ_PARTICLES, p=self.weights)
@@ -275,6 +286,7 @@ class ParticleFilter():
             self.sensor_model.last_laser.header.stamp = rospy.Time.now()
             self.pub_laser.publish(self.sensor_model.last_laser)
         self.state_lock.release()
+        # print "VISUALIZE COMPLETE"
 
     '''
     Helper function for publishing a pose array of particles
