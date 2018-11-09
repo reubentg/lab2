@@ -15,11 +15,11 @@ from get_nrand_samples import get_nrand_samples
 from kinematic_model_step import kinematic_model_step
 
 # Set these values and use them in motion_cb
-KM_V_NOISE = 0.05  # Kinematic car velocity noise std dev
-KM_DELTA_NOISE = 0.05  # Kinematic car delta noise std dev
-KM_X_FIX_NOISE = 0.05  # Kinematic car x position constant noise std dev
-KM_Y_FIX_NOISE = 0.05  # Kinematic car y position constant noise std dev
-KM_THETA_FIX_NOISE = 0.05  # Kinematic car theta constant noise std dev
+KM_V_NOISE = 0#0.05  # Kinematic car velocity noise std dev
+KM_DELTA_NOISE = 0#0.05  # Kinematic car delta noise std dev
+KM_X_FIX_NOISE = 0#0.05  # Kinematic car x position constant noise std dev
+KM_Y_FIX_NOISE = 0#0.05  # Kinematic car y position constant noise std dev
+KM_THETA_FIX_NOISE = 0#0.05  # Kinematic car theta constant noise std dev
 
 # Set this value to max amount of particles to start with
 MAX_PARTICLES = 1000
@@ -138,8 +138,10 @@ class KinematicMotionModel:
         # Note that control_val = (raw_msg_val - offset_param) / gain_param
         # E.g: curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
         curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
-        curr_angle = self.last_servo_cmd
-
+        curr_angle = (self.last_servo_cmd - self.STEERING_TO_SERVO_OFFSET) / self.STEERING_TO_SERVO_GAIN
+        if curr_speed != 0.0:
+            print ".curr_speed, curr_angle", curr_speed, curr_angle
+        # rospy.sleep(1)
         # Propagate particles forward in place
         # Sample control noise and add to nominal control
         # Make sure different control noise is sampled for each particle
@@ -147,7 +149,7 @@ class KinematicMotionModel:
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
         nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
-        # nominal_controls = np.array([1, 0.34, 1])
+        # nominal_controls = np.array([0.001, 0, 1])
         # nominal controls of shape (MAX_PARTICLES, 3)
         nominal_controls_max_particles = np.tile(nominal_controls.T, (MAX_PARTICLES, 1))
         # control noise of shape (3,) - can also be shape(3, 1). noise is std_dev for [speed, angle, 0 for dt]
@@ -183,7 +185,7 @@ class KinematicMotionModel:
 '''
 
 TEST_SPEED = 1.0  # meters/sec
-TEST_STEERING_ANGLE = 0.34  # radians
+TEST_STEERING_ANGLE = 0#0.34  # radians
 TEST_DT = 1.0  # seconds
 TEST_CONTROLS = [TEST_SPEED, TEST_STEERING_ANGLE, TEST_DT]
 
