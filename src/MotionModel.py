@@ -147,7 +147,7 @@ class KinematicMotionModel:
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
         nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
-        nominal_controls = np.array([1, 0.34, 1])
+        # nominal_controls = np.array([1, 0.34, 1])
         # nominal controls of shape (MAX_PARTICLES, 3)
         nominal_controls_max_particles = np.tile(nominal_controls.T, (MAX_PARTICLES, 1))
         # control noise of shape (3,) - can also be shape(3, 1). noise is std_dev for [speed, angle, 0 for dt]
@@ -156,7 +156,7 @@ class KinematicMotionModel:
         # noisy controls of shape (MAX_PARTICLES, 3) - function arguments are shape (MAX_PARTICLES, 3) & (3,)
         noisy_controls_max_particles = get_nrand_samples(nominal_controls_max_particles, control_noise_std_dev)
 
-        self.particles[:] = kinematic_model_step([0, 0, 0], noisy_controls_max_particles, self.CAR_LENGTH)[:]
+        self.particles[:] = kinematic_model_step(self.particles, noisy_controls_max_particles, self.CAR_LENGTH)[:]
 
         # Sample model noise for each particle
         # Limit particle theta to be between -pi and pi
@@ -166,10 +166,12 @@ class KinematicMotionModel:
         # nominal model poses - shape (MAX_PARTICLES, 3)
         # these are the poses that each particle would have if our model is perfect
         # so all particles would have the same values [x, y, theta]
-        nominal_model_poses_max_particles = kinematic_model_step([0, 0, 0], nominal_controls_max_particles, self.CAR_LENGTH)[:]
-        model_noise_std_dev = np.array([KM_X_FIX_NOISE, KM_Y_FIX_NOISE, KM_THETA_FIX_NOISE])
-        noisy_model_poses_max_particles = get_nrand_samples(nominal_model_poses_max_particles, model_noise_std_dev)
-        self.particles[:] = noisy_model_poses_max_particles[:]
+
+        # nominal_model_poses_max_particles = kinematic_model_step(self.particles, nominal_controls_max_particles,
+        #                                                          self.CAR_LENGTH)[:]
+        # model_noise_std_dev = np.array([KM_X_FIX_NOISE, KM_Y_FIX_NOISE, KM_THETA_FIX_NOISE])
+        # noisy_model_poses_max_particles = get_nrand_samples(nominal_model_poses_max_particles, model_noise_std_dev)
+        # self.particles[:] = noisy_model_poses_max_particles[:]
 
         self.last_vesc_stamp = msg.header.stamp
         self.state_lock.release()
@@ -189,7 +191,7 @@ def main():
     rospy.init_node("odometry_model", anonymous=True)  # Initialize the node
     particles = np.zeros((MAX_PARTICLES, 3))  # [1000 x 3] , 1000 particles each with pose [x, y, theta]
 
-    # Load params
+    # Load paramsparticles
     motor_state_topic = rospy.get_param("~motor_state_topic",
                                         "/vesc/sensors/core")  # The topic containing motor state information
     servo_state_topic = rospy.get_param("~servo_state_topic",
