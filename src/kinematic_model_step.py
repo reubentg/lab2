@@ -48,8 +48,11 @@ def kinematic_model_step(poses, controls, car_length):
     yt[non_zero_indices] = yt_minus_1[non_zero_indices] + (car_length / np.sin(2 * beta[non_zero_indices])) * (
             -np.cos(theta[non_zero_indices]) + np.cos(theta_t_minus_1[non_zero_indices]))
 
-    noisy_particles = np.zeros(controls.shape) # shape (MAX_PARTICLES, 3)
-    noisy_particles[:, 0] = xt
-    noisy_particles[:, 1] = yt
-    noisy_particles[:, 2] = theta
-    return noisy_particles
+    # noisy_particles = np.zeros(controls.shape) # shape (MAX_PARTICLES, 3)
+    # noisy_particles[:, 0] = xt
+    # noisy_particles[:, 1] = yt
+    # noisy_particles[:, 2] = theta
+    poses[:, 0] = xt[:]
+    poses[:, 1] = yt[:]
+    poses[:, 2] = theta[:]
+    return poses

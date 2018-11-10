@@ -49,8 +49,9 @@ class SensorModel:
         else:
             self.state_lock = state_lock
 
-        self.particles = particles  # shape (13027200, 3)
-        self.weights = weights  # shape (13027200,)
+        self.particles = particles[:]  # shape (13027200, 3)
+        print "SensorModel.py self.particles ID: ", hex(id(self.particles))
+        self.weights = weights[:]  # shape (13027200,)
 
         self.LASER_RAY_STEP = laser_ray_step  # Step for downsampling laser scans (18 by default)
         # Whether to exclude rays that are beyond the max range (true by default)
@@ -72,7 +73,7 @@ class SensorModel:
         self.downsampled_angles = None  # The angles of the downsampled rays
         self.do_resample = False  # Set so that outside code can know that it's time to resample
 
-        # Subscribe to laser scans
+        # Subscribe to laser scansssssssssssssssws
         self.laser_sub = rospy.Subscriber(scan_topic, LaserScan, self.lidar_cb, queue_size=1)
 
     '''
@@ -308,7 +309,7 @@ def main():
         particles[i * (particles.shape[0] / angle_step):(i + 1) * (particles.shape[0] / angle_step), 1] = permissible_x[
                                                                                                           :]
         particles[i * (particles.shape[0] / angle_step):(i + 1) * (particles.shape[0] / angle_step), 2] = i * (
-                2 * np.pi / angle_step)
+                2.0 * np.pi / angle_step)
 
     Utils.map_to_world(particles, map_info)
     weights = np.ones(particles.shape[0]) / float(particles.shape[0])  # weights.shape (13027200,)

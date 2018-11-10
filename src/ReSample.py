@@ -18,8 +18,9 @@ class ReSampler:
     '''
 
     def __init__(self, particles, weights, state_lock=None):
-        self.particles = particles
-        self.weights = weights
+        self.particles = particles[:]
+        print "ReSample.py self.particles ID: ", hex(id(self.particles))
+        self.weights = weights[:]
 
         # For speed purposes, you may wish to add additional member variable(s) that
         # cache computations that will be reused in the re-sampling functions
@@ -75,16 +76,16 @@ class ReSampler:
         one_over_m = 1.0 / len(self.particles)
         random_num = np.random.uniform(0, one_over_m)
         random_values = np.append(random_num, random_num + particle_indices[1::1] * one_over_m  )
-        print "random_values", random_values
-        print "one_over_m", one_over_m
+        # print "random_values", random_values
+        # print "one_over_m", one_over_m
 
         bin_boundaries = np.append([0], np.cumsum(self.weights))
-        print "bin_boundaries", bin_boundaries
+        # print "bin_boundaries", bin_boundaries
         bins_selected = np.digitize(random_values, bin_boundaries, right=False) - 1
-        print "bins_selected", len(bins_selected), bins_selected
-        self.particles[:, 0] = bins_selected
-        self.particles[:, 1] = bins_selected
-        self.particles[:, 2] = bins_selected
+        # print "bins_selected", len(bins_selected), bins_selected
+        self.particles[:, 0] = self.particles[bins_selected,0][:]
+        self.particles[:, 1] = self.particles[bins_selected,1][:]
+        self.particles[:, 2] = self.particles[bins_selected,2][:]
 
         # set weights to uniform distribution
         # weights: <type 'numpy.ndarray'> shape (100,)

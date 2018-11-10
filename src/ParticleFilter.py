@@ -60,6 +60,8 @@ class ParticleFilter():
         self.particle_indices = np.arange(self.N_PARTICLES)  # Cached list of particle indices
         # create np.array of shape (1000,3), 1000 particles with poses [x, y, theta]
         self.particles = np.zeros((self.N_PARTICLES, 3))  # Numpy matrix of dimension N_PARTICLES x 3
+
+        print "ParticleFilter.py self.particles ID: ", hex(id(self.particles))
         # Numpy matrix containing weight for each particle, shape (1000,)
         self.weights = np.ones(self.N_PARTICLES) / float(self.N_PARTICLES)
 
@@ -149,7 +151,7 @@ class ParticleFilter():
         map_samples[:, 1] = perm_y[uniform_rand_indices]
         map_samples[:, 2] = perm_rand_theta
         Utils.map_to_world(map_samples, self.map_info)
-        self.particles = map_samples
+        self.particles[:] = map_samples[:]
         self.weights[:] = 1.0 / self.N_PARTICLES
         self.state_lock.release()
 
@@ -202,6 +204,9 @@ class ParticleFilter():
         mean_sin_theta = np.mean(np.sin(self.particles[:, 2]))
         mean_cos_theta = np.mean(np.cos(self.particles[:, 2]))
         mean_theta = np.arctan2(mean_sin_theta, mean_cos_theta)
+        # mean_sin_theta = np.sum(np.sin(self.particles[:, 2]))
+        # mean_cos_theta = np.sum(np.cos(self.particles[:, 2]))
+        # mean_theta = np.arctan2(mean_sin_theta, mean_cos_theta)
         # print "particles (expected_pose)", self.particles
         # print "expected pose", mean_x, mean_y, mean_theta
         return np.array([mean_x, mean_y, mean_theta])
@@ -226,12 +231,12 @@ class ParticleFilter():
 
         msg_pose = msg.pose.pose
 
-        std = 0.01 # standard deviation for gaussian samples
+        std = 0.5 # standard deviation for gaussian samples
         # get 1000 gaussian samples of [x, y, theta]
         self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)[:]
         self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.y, std)[:]
         self.particles[:, 2] = get_nrand_samples(np.ones(self.N_PARTICLES) *
-                                                       Utils.quaternion_to_angle(msg_pose.orientation), std)[:]
+                                                       Utils.quaternion_to_angle(msg_pose.orientation), std/2)[:]
 
         print "particles (clicked pose)", self.particles
         self.weights[:] = 1.0 / self.N_PARTICLES # set weights to be all equal and sum to one
@@ -284,10 +289,10 @@ class ParticleFilter():
             else:
                 self.publish_particles(self.particles)
 
-        # if self.pub_laser.get_num_connections() > 0 and isinstance(self.sensor_model.last_laser, LaserScan):
-        #     self.sensor_model.last_laser.header.frame_id = "/laser"
-        #     self.sensor_model.last_laser.header.stamp = rospy.Time.now()
-        #     self.pub_laser.publish(self.sensor_model.last_laser)
+        if self.pub_laser.get_num_connections() > 0 and isinstance(self.sensor_model.last_laser, LaserScan):
+            self.sensor_model.last_laser.header.frame_id = "/laser"
+            self.sensor_model.last_laser.header.stamp = rospy.Time.now()
+            self.pub_laser.publish(self.sensor_model.last_laser)
         self.state_lock.release()
         # print "VISUALIZE COMPLETE"
 
@@ -343,22 +348,27 @@ def main():
                         steering_angle_to_servo_gain, car_length)
 
     while not rospy.is_shutdown():  # Keep going until we kill it
-        # # Callbacks are running in separate threads
-        # if pf.sensor_model.do_resample:  # Check if the sensor model says it's time to resample
-        #     pf.sensor_model.do_resample = False  # Reset so that we don't keep resampling
-        #
-        #     # Resample
-        #     if pf.RESAMPLE_TYPE == "naiive":
-        #         pf.resampler.resample_naiive()
-        #     elif pf.RESAMPLE_TYPE == "low_variance":
-        #         pf.resampler.resample_low_variance()
-        #     else:
-        #         print "Unrecognized resampling method: " + pf.RESAMPLE_TYPE
-        #
-        #     pf.visualize()  # Perform visualization
-        pf.visualize()
+        # Callbacks are running in separate threads
+        if pf.sensor_model.do_resample:  # Check if the sensor model says it's time to resample
+            print ""
+            print "Doing Resampling"
+            print ""
+            pf.sensor_model.do_resample = False  # Reset so that we don't keep resampling
+
+            # Resample
+            if pf.RESAMPLE_TYPE == "naiive":
+                pf.resampler.resample_naiive()
+            elif pf.RESAMPLE_TYPE == "low_variance":
+                pf.resampler.resample_low_variance()
+            else:
+                print "Unrecognized resampling method: " + pf.RESAMPLE_TYPE
+
+            pf.visualize()  # Perform visualization
+        # else:
+            # print "Not Doing Resampling"
+        # pf.visualize()
         # print "visualize()"
-        rospy.sleep(0.01)
+        # rospy.sleep(1)
 
 if __name__ == '__main__':
     main()

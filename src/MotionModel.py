@@ -15,11 +15,11 @@ from get_nrand_samples import get_nrand_samples
 from kinematic_model_step import kinematic_model_step
 
 # Set these values and use them in motion_cb
-KM_V_NOISE = 0#0.05  # Kinematic car velocity noise std dev
-KM_DELTA_NOISE = 0#0.05  # Kinematic car delta noise std dev
-KM_X_FIX_NOISE = 0#0.05  # Kinematic car x position constant noise std dev
-KM_Y_FIX_NOISE = 0#0.05  # Kinematic car y position constant noise std dev
-KM_THETA_FIX_NOISE = 0#0.05  # Kinematic car theta constant noise std dev
+KM_V_NOISE = 0.02  # Kinematic car velocity noise std dev
+KM_DELTA_NOISE = 0.05  # Kinematic car delta noise std dev
+KM_X_FIX_NOISE = 0.05  # Kinematic car x position constant noise std dev
+KM_Y_FIX_NOISE = 0.05  # Kinematic car y position constant noise std dev
+KM_THETA_FIX_NOISE = 0.05  # Kinematic car theta constant noise std dev
 
 # Set this value to max amount of particles to start with
 MAX_PARTICLES = 1000
@@ -49,7 +49,8 @@ class KinematicMotionModel:
                  steering_to_servo_gain, car_length, particles, state_lock=None):
         self.last_servo_cmd = None  # The most recent servo command
         self.last_vesc_stamp = None  # The time stamp from the previous vesc state msg
-        self.particles = particles # [1000 x 3] , 1000 particles each with pose [x, y, theta], set to 0s
+        self.particles = particles[:] # [1000 x 3] , 1000 particles each with pose [x, y, theta], set to 0s
+        print "MotionModel.py self.particles ID: ", hex(id(self.particles))
         self.SPEED_TO_ERPM_OFFSET = speed_to_erpm_offset  # Offset conversion param from rpm to speed
         self.SPEED_TO_ERPM_GAIN = speed_to_erpm_gain  # Gain conversion param from rpm to speed
         self.STEERING_TO_SERVO_OFFSET = steering_to_servo_offset  # Offset conversion param from servo position to steering angle
@@ -139,8 +140,10 @@ class KinematicMotionModel:
         # E.g: curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
         curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
         curr_angle = (self.last_servo_cmd - self.STEERING_TO_SERVO_OFFSET) / self.STEERING_TO_SERVO_GAIN
-        if curr_speed != 0.0:
-            print ".curr_speed, curr_angle", curr_speed, curr_angle
+        # curr_angle = -1 * (np.pi / 180)
+
+        # if curr_speed != 0.0:
+        #     print ".curr_speed, curr_angle", curr_speed, curr_angle
         # rospy.sleep(1)
         # Propagate particles forward in place
         # Sample control noise and add to nominal control
@@ -149,7 +152,8 @@ class KinematicMotionModel:
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
         nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
-        # nominal_controls = np.array([0.001, 0, 1])
+        # nominal_controls = np.array([1, curr_angle, msg_dt])
+        nominal_controls = np.array([.1, 0.0, .1])
         # nominal controls of shape (MAX_PARTICLES, 3)
         nominal_controls_max_particles = np.tile(nominal_controls.T, (MAX_PARTICLES, 1))
         # control noise of shape (3,) - can also be shape(3, 1). noise is std_dev for [speed, angle, 0 for dt]
