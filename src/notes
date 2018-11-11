@@ -1,8 +1,0 @@
-This page is just random notes for lab2
-
-
-This code can be used in SensorModel.py at the end of precompute_sensor_model()
-# # ToDo: DELETE THIS - Not our code, Only for Testing
-# # Code from: https://github.com/mit-racecar/particle_filter/blob/master/src/particle_filter.py
-# from visualize_sensor_model import show_viz
-# show_viz(sensor_model_table, table_width)

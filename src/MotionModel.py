@@ -155,10 +155,11 @@ class KinematicMotionModel:
         # Propagate particles through kinematic model with noisy controls
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
-        nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
-        # print
-        # nominal_controls = np.array([1, curr_angle, msg_dt])
-        # nominal_controls = np.array([curr_speed, curr_angle, 0.02])
+
+        if True: # True for Testing
+            nominal_controls = np.array(TEST_CONTROLS)
+        else:
+            nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
         # nominal controls of shape (MAX_PARTICLES, 3)
         nominal_controls_max_particles = np.tile(nominal_controls.T, (MAX_PARTICLES, 1))
         # control noise of shape (3,) - can also be shape(3, 1). noise is std_dev for [speed, angle, 0 for dt]
@@ -194,7 +195,7 @@ class KinematicMotionModel:
 '''
 
 TEST_SPEED = 1.0  # meters/sec
-TEST_STEERING_ANGLE = 0#0.34  # radians
+TEST_STEERING_ANGLE = 0.34 #0.34  # radians
 TEST_DT = 1.0  # seconds
 TEST_CONTROLS = [TEST_SPEED, TEST_STEERING_ANGLE, TEST_DT]
 
@@ -252,9 +253,20 @@ def main():
     # Visualize particles
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    ax.set_title('TEST2')
     plt.xlabel('x')
     plt.ylabel('y')
-    plt.title('Possible Positions of Next Iteration')
+    plt.title(('Speed: %0.2f m/sec, Steering Angle %0.2f rad, Time Interval %0.2f sec\n'
+               'KM_V_NOISE: %0.2f, KM_DELTA_NOISE: %0.2f, KM_X_FIX_NOISE: %0.2f, KM_Y_FIX_NOISE: %0.2f, KM_THETA_FIX_NOISE: %0.2f'
+               % (TEST_SPEED, TEST_STEERING_ANGLE, TEST_DT,
+                  KM_V_NOISE,
+                  KM_DELTA_NOISE,
+                  KM_X_FIX_NOISE,
+                  KM_Y_FIX_NOISE,
+                  KM_THETA_FIX_NOISE,
+                  )), fontsize=12, horizontalalignment='left') # subtitle
+    plt.suptitle('Test')
+    plt.suptitle('Possible Positions of Next Iteration', fontsize=18) # title
     ax.scatter([0], [0], c='r', label='Initial Positions')
     ax.scatter(particles[:, 0], particles[:, 1], c='b', label='Progogated Positions') # [x y] for 1000 particles
     ax.legend(loc='best')
