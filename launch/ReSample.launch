@@ -3,7 +3,7 @@
   <arg name="n_particles" default="100" />
   <arg name="k_val" default="80" />
   <arg name="resample_type" default="low_variance"/>
-  <arg name="trials" default="10" />
+  <arg name="trials" default="10000" />
 
   <node name="resample" type="ReSample.py" pkg="lab2" output="screen" >
 	  <param name="n_particles" value="$(arg n_particles) " />

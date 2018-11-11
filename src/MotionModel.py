@@ -15,11 +15,11 @@ from get_nrand_samples import get_nrand_samples
 from kinematic_model_step import kinematic_model_step
 
 # Set these values and use them in motion_cb
-KM_V_NOISE = 0.1  # Kinematic car velocity noise std dev
-KM_DELTA_NOISE = 0.2  # Kinematic car delta noise std dev
-KM_X_FIX_NOISE = 0.1  # Kinematic car x position constant noise std dev
-KM_Y_FIX_NOISE = 0.1  # Kinematic car y position constant noise std dev
-KM_THETA_FIX_NOISE = 0.1  # Kinematic car theta constant noise std dev
+KM_V_NOISE = 0.02  # Kinematic car velocity noise std dev
+KM_DELTA_NOISE = 0.10  # Kinematic car delta noise std dev
+KM_X_FIX_NOISE = 0.02  # Kinematic car x position constant noise std dev
+KM_Y_FIX_NOISE = 0.02  # Kinematic car y position constant noise std dev
+KM_THETA_FIX_NOISE = 0.02  # Kinematic car theta constant noise std dev
 
 # Set this value to max amount of particles to start with
 MAX_PARTICLES = 1000
@@ -181,9 +181,10 @@ class KinematicMotionModel:
 
         # nominal_model_poses_max_particles = kinematic_model_step(self.particles, nominal_controls_max_particles,
         #                                                          self.CAR_LENGTH)[:]
-        # model_noise_std_dev = np.array([KM_X_FIX_NOISE, KM_Y_FIX_NOISE, KM_THETA_FIX_NOISE])
+        model_noise_std_dev = np.array([KM_X_FIX_NOISE, KM_Y_FIX_NOISE, KM_THETA_FIX_NOISE])
         # noisy_model_poses_max_particles = get_nrand_samples(nominal_model_poses_max_particles, model_noise_std_dev)
-        # self.particles[:] = noisy_model_poses_max_particles[:]
+        noisy_model_poses_max_particles = get_nrand_samples(self.particles, model_noise_std_dev)
+        self.particles[:] = noisy_model_poses_max_particles[:]#-nominal_model_poses_max_particles[:])
 
         self.last_vesc_stamp = msg.header.stamp
         self.state_lock.release()
@@ -251,22 +252,20 @@ def main():
 
     kmm.state_lock.acquire() # kinematic motion model method
     # Visualize particles
-    fig = plt.figure()
+    fig = plt.figure(figsize=(15,10)) # set figure size in inches (width, height)
     ax = fig.add_subplot(111)
-    ax.set_title('TEST2')
     plt.xlabel('x')
     plt.ylabel('y')
-    plt.title(('Speed: %0.2f m/sec, Steering Angle %0.2f rad, Time Interval %0.2f sec\n'
-               'KM_V_NOISE: %0.2f, KM_DELTA_NOISE: %0.2f, KM_X_FIX_NOISE: %0.2f, KM_Y_FIX_NOISE: %0.2f, KM_THETA_FIX_NOISE: %0.2f'
-               % (TEST_SPEED, TEST_STEERING_ANGLE, TEST_DT,
-                  KM_V_NOISE,
+    plt.title(('KM_V_NOISE: %0.2f, KM_DELTA_NOISE: %0.2f, KM_X_FIX_NOISE: %0.2f, KM_Y_FIX_NOISE: %0.2f, KM_THETA_FIX_NOISE: %0.2f\n'
+               'Speed: %0.2f m/sec, Steering Angle %0.2f rad, Time Interval %0.2f sec'
+               % (KM_V_NOISE,
                   KM_DELTA_NOISE,
                   KM_X_FIX_NOISE,
                   KM_Y_FIX_NOISE,
                   KM_THETA_FIX_NOISE,
-                  )), fontsize=12, horizontalalignment='left') # subtitle
-    plt.suptitle('Test')
-    plt.suptitle('Possible Positions of Next Iteration', fontsize=18) # title
+                  TEST_SPEED, TEST_STEERING_ANGLE, TEST_DT
+                  )), fontsize=12) # subtitle
+    plt.suptitle('Kinematic Motion Model with Stochasticity', fontsize=18) # title
     ax.scatter([0], [0], c='r', label='Initial Positions')
     ax.scatter(particles[:, 0], particles[:, 1], c='b', label='Progogated Positions') # [x y] for 1000 particles
     ax.legend(loc='best')
