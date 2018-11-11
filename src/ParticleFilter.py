@@ -61,7 +61,6 @@ class ParticleFilter():
         # create np.array of shape (1000,3), 1000 particles with poses [x, y, theta]
         self.particles = np.zeros((self.N_PARTICLES, 3))  # Numpy matrix of dimension N_PARTICLES x 3
 
-        print "ParticleFilter.py self.particles ID: ", hex(id(self.particles))
         # Numpy matrix containing weight for each particle, shape (1000,)
         self.weights = np.ones(self.N_PARTICLES) / float(self.N_PARTICLES)
 
@@ -231,12 +230,12 @@ class ParticleFilter():
 
         msg_pose = msg.pose.pose
 
-        std = 0.2 # standard deviation for gaussian samples
+        std = 0.3 # standard deviation for gaussian samples
         # get 1000 gaussian samples of [x, y, theta]
         self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)[:]
         self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.y, std)[:]
         self.particles[:, 2] = get_nrand_samples(np.ones(self.N_PARTICLES) *
-                                                       Utils.quaternion_to_angle(msg_pose.orientation), std/2)[:]
+                                                       Utils.quaternion_to_angle(msg_pose.orientation), std)[:]
 
         print "particles (clicked pose)", self.particles
         self.weights[:] = 1.0 / self.N_PARTICLES # set weights to be all equal and sum to one

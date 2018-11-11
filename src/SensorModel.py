@@ -50,7 +50,6 @@ class SensorModel:
             self.state_lock = state_lock
 
         self.particles = particles[:]  # shape (13027200, 3)
-        print "SensorModel.py self.particles ID: ", hex(id(self.particles))
         self.weights = weights[:]  # shape (13027200,)
 
         self.LASER_RAY_STEP = laser_ray_step  # Step for downsampling laser scans (18 by default)

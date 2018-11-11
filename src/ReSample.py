@@ -19,7 +19,6 @@ class ReSampler:
 
     def __init__(self, particles, weights, state_lock=None):
         self.particles = particles[:]
-        print "ReSample.py self.particles ID: ", hex(id(self.particles))
         self.weights = weights[:]
 
         # For speed purposes, you may wish to add additional member variable(s) that

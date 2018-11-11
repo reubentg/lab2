@@ -15,11 +15,11 @@ from get_nrand_samples import get_nrand_samples
 from kinematic_model_step import kinematic_model_step
 
 # Set these values and use them in motion_cb
-KM_V_NOISE = 0.02  # Kinematic car velocity noise std dev
-KM_DELTA_NOISE = 0.05  # Kinematic car delta noise std dev
-KM_X_FIX_NOISE = 0.05  # Kinematic car x position constant noise std dev
-KM_Y_FIX_NOISE = 0.05  # Kinematic car y position constant noise std dev
-KM_THETA_FIX_NOISE = 0.05  # Kinematic car theta constant noise std dev
+KM_V_NOISE = 0.1  # Kinematic car velocity noise std dev
+KM_DELTA_NOISE = 0.2  # Kinematic car delta noise std dev
+KM_X_FIX_NOISE = 0.1  # Kinematic car x position constant noise std dev
+KM_Y_FIX_NOISE = 0.1  # Kinematic car y position constant noise std dev
+KM_THETA_FIX_NOISE = 0.1  # Kinematic car theta constant noise std dev
 
 # Set this value to max amount of particles to start with
 MAX_PARTICLES = 1000
@@ -50,7 +50,6 @@ class KinematicMotionModel:
         self.last_servo_cmd = None  # The most recent servo command
         self.last_vesc_stamp = None  # The time stamp from the previous vesc state msg
         self.particles = particles[:] # [1000 x 3] , 1000 particles each with pose [x, y, theta], set to 0s
-        print "MotionModel.py self.particles ID: ", hex(id(self.particles))
         self.SPEED_TO_ERPM_OFFSET = speed_to_erpm_offset  # Offset conversion param from rpm to speed
         self.SPEED_TO_ERPM_GAIN = speed_to_erpm_gain  # Gain conversion param from rpm to speed
         self.STEERING_TO_SERVO_OFFSET = steering_to_servo_offset  # Offset conversion param from servo position to steering angle
@@ -251,13 +250,31 @@ def main():
 
     kmm.state_lock.acquire() # kinematic motion model method
     # Visualize particles
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     plt.xlabel('x')
     plt.ylabel('y')
     plt.title('Possible Positions of Next Iteration')
-    plt.scatter([0], [0], c='r')
-    plt.scatter(particles[:, 0], particles[:, 1], c='b') # [x y] for 1000 particles
+    ax.scatter([0], [0], c='r', label='Initial Positions')
+    ax.scatter(particles[:, 0], particles[:, 1], c='b', label='Progogated Positions') # [x y] for 1000 particles
+    ax.legend(loc='best')
     plt.show()
     kmm.state_lock.release() # kinematic motion model method
+
+    ###
+    #  Plot for Testing
+    ###
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.plot(np.arange(0, len(self.downsampled_angles)), self.downsampled_angles, 'r+', markersize=6,
+    #         linewidth=2, label='downsampled angles')
+    # ax.plot(np.arange(0, len(downsampled_ranges)), downsampled_ranges, 'bx', markersize=6,
+    #         linewidth=2, label='downsampled ranges')
+    # ax.set_xlim(0,round(682/self.LASER_RAY_STEP))
+    # plt.title('Lidar Scan')
+    # ax.legend(loc='best')
+    # plt.show()
 
 if __name__ == '__main__':
     main()
