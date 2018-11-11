@@ -132,12 +132,14 @@ class KinematicMotionModel:
         # and the timestamp from the previous call is stored in self.last_vesc_stamp
         # and the timestamp from the current call is stored in msg.header.stamp
         # DT (change in time) is current timestamp - previous timestamp
-        msg_dt = (msg.header.stamp.nsecs - self.last_vesc_stamp.nsecs) # TODO: Find out why this is sometimes negative
+        msg_dt = (msg.header.stamp.to_sec() - self.last_vesc_stamp.to_sec()) # TODO: Find out why this is sometimes negative
         self.count += 1
         # msg_dt *= 0.000000001 # convert nsecs to secs
-        print "msg_dt #", self.count, "current",msg.header.stamp.nsecs, "last", sel ", dt:", msg_dt
-        # if msg_dt < 0:
-        #    msg
+        # if msg.header.stamp.nsecs < self.last_vesc_stamp.nsecs: # current timestamp resets at 1,000,000,000 nsecs
+        #    msg_dt = msg.header.stamp.nsecs + 1000000000.0 - self.last_vesc_stamp.nsecs
+
+        # print "msg_dt #", self.count, "current", msg.header.stamp.to_sec(), "last", self.last_vesc_stamp.to_sec(), ", dt:", msg_dt
+
         # Convert raw msgs to controls
         # Note that control_val = (raw_msg_val - offset_param) / gain_param
         # E.g: curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
