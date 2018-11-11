@@ -231,7 +231,7 @@ class ParticleFilter():
 
         msg_pose = msg.pose.pose
 
-        std = 0.5 # standard deviation for gaussian samples
+        std = 0.2 # standard deviation for gaussian samples
         # get 1000 gaussian samples of [x, y, theta]
         self.particles[:, 0] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.x, std)[:]
         self.particles[:, 1] = get_nrand_samples(np.ones(self.N_PARTICLES) * msg_pose.position.y, std)[:]
@@ -350,9 +350,9 @@ def main():
     while not rospy.is_shutdown():  # Keep going until we kill it
         # Callbacks are running in separate threads
         if pf.sensor_model.do_resample:  # Check if the sensor model says it's time to resample
-            print ""
-            print "Doing Resampling"
-            print ""
+            # print ""
+            # print "Doing Resampling"
+            # print ""
             pf.sensor_model.do_resample = False  # Reset so that we don't keep resampling
 
             # Resample

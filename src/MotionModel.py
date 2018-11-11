@@ -132,9 +132,12 @@ class KinematicMotionModel:
         # and the timestamp from the previous call is stored in self.last_vesc_stamp
         # and the timestamp from the current call is stored in msg.header.stamp
         # DT (change in time) is current timestamp - previous timestamp
-        msg_dt = float(msg.header.stamp.nsecs - self.last_vesc_stamp.nsecs) # TODO: Find out why this is sometimes negative
-        msg_dt *= 0.000000001 # convert nsecs to secs
-
+        msg_dt = (msg.header.stamp.nsecs - self.last_vesc_stamp.nsecs) # TODO: Find out why this is sometimes negative
+        self.count += 1
+        # msg_dt *= 0.000000001 # convert nsecs to secs
+        print "msg_dt #", self.count, "current",msg.header.stamp.nsecs, "last", sel ", dt:", msg_dt
+        # if msg_dt < 0:
+        #    msg
         # Convert raw msgs to controls
         # Note that control_val = (raw_msg_val - offset_param) / gain_param
         # E.g: curr_speed = (msg.state.speed - self.SPEED_TO_ERPM_OFFSET) / self.SPEED_TO_ERPM_GAIN
@@ -152,8 +155,9 @@ class KinematicMotionModel:
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
         nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
+        # print
         # nominal_controls = np.array([1, curr_angle, msg_dt])
-        nominal_controls = np.array([.1, 0.0, .1])
+        # nominal_controls = np.array([curr_speed, curr_angle, 0.02])
         # nominal controls of shape (MAX_PARTICLES, 3)
         nominal_controls_max_particles = np.tile(nominal_controls.T, (MAX_PARTICLES, 1))
         # control noise of shape (3,) - can also be shape(3, 1). noise is std_dev for [speed, angle, 0 for dt]
