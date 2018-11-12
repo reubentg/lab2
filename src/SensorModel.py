@@ -17,11 +17,11 @@ THETA_DISCRETIZATION = 112  # Discretization of scanning angle
 INV_SQUASH_FACTOR = 0.2  # Factor for helping the weight distribution to be less peaked
 
 # YOUR CODE HERE (Set these values and use them in precompute_sensor_model)
-Z_SHORT = 0.04  # Weight for short reading
-Z_MAX = 0.06  # Weight for max reading
-Z_RAND = 0.15  # Weight for random reading
-SIGMA_HIT = 10  # Noise value for hit reading
-Z_HIT = 0.75  # Weight for hit reading
+Z_SHORT = 0.05  # Weight for short reading
+Z_MAX = 0.05  # Weight for max reading
+Z_RAND = 0.05  # Weight for random reading
+SIGMA_HIT = 7  # Noise value for hit reading
+Z_HIT = 0.85  # Weight for hit reading
 
 
 ''' 

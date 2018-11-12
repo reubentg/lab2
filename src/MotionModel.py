@@ -15,11 +15,11 @@ from get_nrand_samples import get_nrand_samples
 from kinematic_model_step import kinematic_model_step
 
 # Set these values and use them in motion_cb
-KM_V_NOISE = 0.02  # Kinematic car velocity noise std dev
-KM_DELTA_NOISE = 0.10  # Kinematic car delta noise std dev
-KM_X_FIX_NOISE = 0.02  # Kinematic car x position constant noise std dev
-KM_Y_FIX_NOISE = 0.02  # Kinematic car y position constant noise std dev
-KM_THETA_FIX_NOISE = 0.02  # Kinematic car theta constant noise std dev
+KM_V_NOISE = 0.04  # Kinematic car velocity noise std dev
+KM_DELTA_NOISE = 0.12  # Kinematic car delta noise std dev
+KM_X_FIX_NOISE = 0.03  # Kinematic car x position constant noise std dev
+KM_Y_FIX_NOISE = 0.03  # Kinematic car y position constant noise std dev
+KM_THETA_FIX_NOISE = 0.03  # Kinematic car theta constant noise std dev
 
 # Set this value to max amount of particles to start with
 MAX_PARTICLES = 1000
@@ -156,7 +156,7 @@ class KinematicMotionModel:
 
         # nominal controls of shape (3,) - can also be shape(3, 1)
 
-        if True: # True for Testing
+        if 0: # True for Testing
             nominal_controls = np.array(TEST_CONTROLS)
         else:
             nominal_controls = np.array([curr_speed, curr_angle, msg_dt])
